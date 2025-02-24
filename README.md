@@ -27,6 +27,29 @@ $ forge build
 $ forge test
 ```
 
+
+# Deploy all contracts with Catapulta
+
+
+## Testnet
+
+```sh
+catapulta script script/catapulta/DeployBitarenaBetaTester.s.sol:DeployBitarenaBetaTester --network sepolia --legacy --sender 0x10929b8bCbA7Eb9C193cDc2ED220aE39027E60Ec
+```
+
+## Generate coverage 
+
+```sh
+forge coverage --report lcov --report summary
+```
+
+With HTML format 
+
+```sh
+genhtml lcov.info --output-directory coverage-report
+```
+
+
 ### Format
 
 ```shell
@@ -45,11 +68,6 @@ $ forge snapshot
 $ anvil
 ```
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
 
 ### Cast
 
@@ -64,3 +82,4 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+

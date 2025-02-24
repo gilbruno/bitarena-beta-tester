@@ -10,7 +10,7 @@ import {BitarenaBetaTester} from "../../src/BitarenaBetaTester.sol";
  * @author 
  * @notice 
  */
-contract DeployScript is Script {
+contract DeployBitarenaBetaTester is Script {
   function run() external {
 
     uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_DEPLOYER_BITARENA_NFT_BETA_TESTER");

@@ -10,7 +10,6 @@ contract BitarenaBetaTester is ERC721, ERC721Pausable, AccessControl, IBitarenaB
 
     bytes32 public constant SUPER_ADMIN_ROLE = keccak256("SUPER_ADMIN_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PRIVILEGED_BETA_TESTER_ROLE = keccak256("PRIVILEGED_BETA_TESTER_ROLE");
 
     uint256 public MINT_PRICE;
@@ -23,6 +22,8 @@ contract BitarenaBetaTester is ERC721, ERC721Pausable, AccessControl, IBitarenaB
 
     uint256 private _privilegedMintCount;
 
+    mapping(address => bool) public hasMinted;
+    
     /// @notice Creates a new BitarenaBetaTester NFT contract
     /// @dev Sets up initial roles and mint price
     constructor()
@@ -30,8 +31,8 @@ contract BitarenaBetaTester is ERC721, ERC721Pausable, AccessControl, IBitarenaB
     {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PAUSER_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
         MINT_PRICE = 0.005 ether;
+        _nextTokenId = 1;
     }
     
     /// @notice Restricts function access to super admin or default admin
@@ -57,22 +58,24 @@ contract BitarenaBetaTester is ERC721, ERC721Pausable, AccessControl, IBitarenaB
 
     /// @notice Safely mints a new token
     /// @dev Handles privileged and regular minting
-    /// @param to Address to mint the token to
     /// @return tokenId The ID of the newly minted token
-    function safeMint(address to) public payable returns (uint256) {
+    function safeMint() public payable whenNotPaused returns (uint256) {
+        if (hasMinted[msg.sender]) revert AlreadyMinted();  
+        hasMinted[msg.sender] = true;
         bool isPrivileged = hasRole(PRIVILEGED_BETA_TESTER_ROLE, msg.sender);
         if (isPrivileged) {
             if (_privilegedMintCount >= MAX_PRIVILEGED_SUPPLY) revert MaxPrivilegedSupplyReached();
             _privilegedMintCount++;
         } else {
             if (msg.value < MINT_PRICE) revert IncorrectMintPrice();
-            if (_nextTokenId - _privilegedMintCount >= MAX_REGULAR_SUPPLY) revert MaxRegularSupplyReached();
+            if (_nextTokenId - _privilegedMintCount > MAX_REGULAR_SUPPLY) revert MaxRegularSupplyReached();
         }
         
-        if (_nextTokenId >= MAX_SUPPLY) revert MaxSupplyReached();
-        uint256 tokenId = _nextTokenId++;
-        _safeMint(to, tokenId);
-        emit BitarenaBetaTesterMinted(to, tokenId, isPrivileged);
+        if (_nextTokenId > MAX_SUPPLY) revert MaxSupplyReached();
+        uint256 tokenId = _nextTokenId;
+        _safeMint(msg.sender, tokenId);
+        emit BitarenaBetaTesterMinted(msg.sender, tokenId, isPrivileged);
+        _nextTokenId++;
         return tokenId;
     }
 
@@ -85,13 +88,6 @@ contract BitarenaBetaTester is ERC721, ERC721Pausable, AccessControl, IBitarenaB
     function _update(address to, uint256 tokenId, address auth) internal override(ERC721, ERC721Pausable)  returns (address)
     {
         return super._update(to, tokenId, auth);
-    }
-
-    /// @notice Sets the minter role
-    /// @dev Only callable by super admin
-    /// @param minter Address to grant minter role to
-    function setMinterRole(address minter) public onlySuperAdmin {
-        _grantRole(MINTER_ROLE, minter);
     }
 
     /// @notice Sets the pauser role
@@ -132,6 +128,13 @@ contract BitarenaBetaTester is ERC721, ERC721Pausable, AccessControl, IBitarenaB
     /// @param betaTester Address to grant privileged beta tester role to
     function setPrivilegedBetaTesterRole(address betaTester) public onlySuperAdmin {
         _grantRole(PRIVILEGED_BETA_TESTER_ROLE, betaTester);
+    }
+
+    /// @notice Returns the next token ID
+    /// @dev Returns the next token ID
+    /// @return nextTokenId The next token ID
+    function getNextTokenId() public view returns (uint256) {
+        return _nextTokenId;
     }
 
     /// @notice Supports the ERC721 interface

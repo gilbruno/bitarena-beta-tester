@@ -12,15 +12,16 @@ interface IBitarenaBetaTester {
     error MaxSupplyReached();
     error WithdrawFailed();
     error NotSuperAdmin();
-
+    error AlreadyMinted();
     function pause() external;
     function unpause() external;
 
-    function safeMint(address to) external payable returns (uint256);
+    function safeMint() external payable returns (uint256);
+
+    function getNextTokenId() external view returns (uint256);
 
     function setSuperAdminRole(address superAdmin) external;
     function setPrivilegedBetaTesterRole(address betaTester) external;
-    function setMinterRole(address minter) external;
     function setPauserRole(address pauser) external;
 
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
